@@ -4,25 +4,31 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Clock, Users, Activity } from "lucide-react"
-import type { Turno } from "@/app/page"
+import type { Turno, Configuracion } from "@/app/page"
 import { useEffect } from "react"
 
 interface PantallaClientesProps {
   turnoActual: Turno | null
   turnosEsperando: Turno[]
+  turnos: Turno[]
+  configuracion: Configuracion
   onVolver: () => void
   onMarcarAtendido: (id: string) => void
   onMarcarNoPresentado: (id: string) => void
   onLlamarSiguiente: () => void
+  onRegresarTurno: (id: string) => void
 }
 
 export function PantallaClientes({
   turnoActual,
   turnosEsperando,
+  turnos,
+  configuracion,
   onVolver,
   onMarcarAtendido,
   onMarcarNoPresentado,
   onLlamarSiguiente,
+  onRegresarTurno,
 }: PantallaClientesProps) {
   const getPrioridadColor = (prioridad: string) => {
     switch (prioridad) {
@@ -71,6 +77,24 @@ export function PantallaClientes({
         case "Enter":
           onLlamarSiguiente()
           break
+        case "3": // Cambio de tecla espacio a número 3
+          // Buscar todos los turnos que han sido procesados (atendidos o no presentados)
+          const turnosFinalizados = turnos.filter((t) => t.estado === "atendido" || t.estado === "no_presentado")
+
+          if (turnosFinalizados.length > 0) {
+            // Ordenar por hora de procesamiento (más reciente primero)
+            const ultimoTurnoProcesado = turnosFinalizados.sort((a, b) => {
+              const timeA = (a.horaAtencion || a.horaLlamada || a.horaCreacion).getTime()
+              const timeB = (b.horaAtencion || b.horaLlamada || b.horaCreacion).getTime()
+              return timeB - timeA
+            })[0]
+
+            if (ultimoTurnoProcesado) {
+              // Regresar el turno al estado "llamado"
+              onRegresarTurno(ultimoTurnoProcesado.id)
+            }
+          }
+          break
         case "Escape":
           // Salir de pantalla completa y volver
           if (document.fullscreenElement) {
@@ -83,7 +107,16 @@ export function PantallaClientes({
 
     window.addEventListener("keydown", handleKeyPress)
     return () => window.removeEventListener("keydown", handleKeyPress)
-  }, [turnoActual, onMarcarAtendido, onMarcarNoPresentado, onLlamarSiguiente, onVolver])
+  }, [
+    turnoActual,
+    turnosEsperando,
+    turnos,
+    onMarcarAtendido,
+    onMarcarNoPresentado,
+    onLlamarSiguiente,
+    onVolver,
+    onRegresarTurno,
+  ])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 text-white">
@@ -216,7 +249,7 @@ export function PantallaClientes({
 
           <Card className="bg-white/10 border-white/20 backdrop-blur-sm shadow-xl">
             <CardContent className="p-8 text-center">
-              <div className="text-4xl font-bold text-purple-400 mb-3">1</div>
+              <div className="text-4xl font-bold text-purple-400 mb-3">{configuracion.recepciones}</div>
               <p className="text-emerald-200 text-lg">Recepciones Activas</p>
             </CardContent>
           </Card>
@@ -229,11 +262,11 @@ export function PantallaClientes({
             <span className="text-emerald-200 text-lg">Sistema activo - Esperando turnos</span>
           </div>
 
-          {/* Controles discretos */}
+          {/* Controles discretos actualizados */}
           <div className="text-right opacity-30 hover:opacity-100 transition-opacity">
             <div className="text-xs text-emerald-300 space-y-1">
               <div>0: Atendido | 1: No presentado</div>
-              <div>ENTER: Siguiente | ESC: Salir</div>
+              <div>ENTER: Siguiente | 3: Regresar | ESC: Salir</div>
             </div>
           </div>
         </div>
