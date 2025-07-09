@@ -58,14 +58,14 @@ export default function SistemaTurnos() {
   const [mostrarPantalla, setMostrarPantalla] = useState(false)
 
   const [configuracion, setConfiguracion] = useState<Configuracion>({
-    servicios: ["Análisis de Sangre", "Análisis de Orina", "Rayos X", "Ecografía", "Consulta General"],
-    recepciones: 2,
+    servicios: ["Laboratorio"],
+    recepciones: 21
     sonidoActivado: true,
     vozActivada: false,
     vozSeleccionada: "",
     velocidadVoz: 0.7,
     volumenVoz: 0.9,
-    tiempoEsperaLlamada: 30,
+    tiempoEsperaLlamada: 300,
   })
 
   // Cargar datos del localStorage al iniciar
@@ -330,9 +330,9 @@ export default function SistemaTurnos() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-5xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-3">
-                🧪 Sistema de Turnos - Laboratorio
+                🧪 Sistema de Turnos - Conexión salud
               </h1>
-              <p className="text-slate-600 text-lg">Gestión profesional de turnos para laboratorio clínico</p>
+              <p className="text-slate-600 text-lg">Gestión de turnos para laboratorio clínico</p>
             </div>
             <div className="flex gap-3">
               <Button
