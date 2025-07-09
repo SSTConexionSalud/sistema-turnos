@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -125,7 +126,7 @@ export function PantallaClientes({
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div>
             <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">
-              🧪 Laboratorio Clínico
+              🧪 Conexión Salud
             </h1>
             <p className="text-emerald-200 text-xl">Sistema de Turnos - Pantalla de Información</p>
           </div>
