@@ -41,6 +41,10 @@ export interface Configuracion {
   servicios: string[]
   recepciones: number
   sonidoActivado: boolean
+  vozActivada: boolean
+  vozSeleccionada: string
+  velocidadVoz: number
+  volumenVoz: number
   tiempoEsperaLlamada: number
 }
 
@@ -54,9 +58,13 @@ export default function SistemaTurnos() {
   const [mostrarPantalla, setMostrarPantalla] = useState(false)
 
   const [configuracion, setConfiguracion] = useState<Configuracion>({
-    servicios: ["Laboratorio", "Análisis de Orina", "Rayos X", "Ecografía", "Consulta General"],
-    recepciones: 1,
+    servicios: ["Análisis de Sangre", "Análisis de Orina", "Rayos X", "Ecografía", "Consulta General"],
+    recepciones: 2,
     sonidoActivado: true,
+    vozActivada: false,
+    vozSeleccionada: "",
+    velocidadVoz: 0.7,
+    volumenVoz: 0.9,
     tiempoEsperaLlamada: 30,
   })
 
@@ -81,7 +89,15 @@ export default function SistemaTurnos() {
     }
 
     if (configGuardada) {
-      setConfiguracion(JSON.parse(configGuardada))
+      const configParseada = JSON.parse(configGuardada)
+      // Agregar nuevas propiedades si no existen en la configuración guardada
+      setConfiguracion({
+        ...configParseada,
+        vozActivada: configParseada.vozActivada ?? false,
+        vozSeleccionada: configParseada.vozSeleccionada ?? "",
+        velocidadVoz: configParseada.velocidadVoz ?? 0.7,
+        volumenVoz: configParseada.volumenVoz ?? 0.9,
+      })
     }
   }, [])
 
@@ -119,6 +135,34 @@ export default function SistemaTurnos() {
         oscillator.start(context.currentTime)
         oscillator.stop(context.currentTime + 0.5)
       })
+    }
+  }
+
+  const leerTurno = (numeroTurno: number) => {
+    if (configuracion.vozActivada && "speechSynthesis" in window) {
+      // Cancelar cualquier síntesis anterior
+      speechSynthesis.cancel()
+
+      const utterance = new SpeechSynthesisUtterance(`Turno ${numeroTurno}`)
+
+      // Configurar la voz seleccionada si está disponible
+      if (configuracion.vozSeleccionada) {
+        const voices = speechSynthesis.getVoices()
+        const selectedVoice = voices.find((voice) => voice.name === configuracion.vozSeleccionada)
+        if (selectedVoice) {
+          utterance.voice = selectedVoice
+        }
+      }
+
+      utterance.lang = "es-ES"
+      utterance.rate = configuracion.velocidadVoz
+      utterance.volume = configuracion.volumenVoz
+      utterance.pitch = 1.0
+
+      // Pequeña pausa antes de hablar para mejor claridad
+      setTimeout(() => {
+        speechSynthesis.speak(utterance)
+      }, 100)
     }
   }
 
@@ -192,7 +236,14 @@ export default function SistemaTurnos() {
     )
 
     setTurnoActual(turnoEspera)
-    reproducirSonido()
+
+    // Reproducir sonido y/o leer turno según configuración
+    if (configuracion.sonidoActivado) {
+      reproducirSonido()
+    }
+    if (configuracion.vozActivada) {
+      leerTurno(turnoEspera.numero)
+    }
 
     // Auto-marcar como no presentado después del tiempo configurado
     setTimeout(() => {
@@ -215,6 +266,16 @@ export default function SistemaTurnos() {
     setTurnos((prev) => prev.map((t) => (t.id === turnoId ? { ...t, estado: "no_presentado" } : t)))
     if (turnoActual?.id === turnoId) {
       setTurnoActual(null)
+    }
+  }
+
+  const regresarTurno = (turnoId: string) => {
+    setTurnos((prev) => prev.map((t) => (t.id === turnoId ? { ...t, estado: "llamado", horaAtencion: undefined } : t)))
+
+    // Si no hay turno actual, establecer este como el turno actual
+    const turno = turnos.find((t) => t.id === turnoId)
+    if (!turnoActual && turno) {
+      setTurnoActual(turno)
     }
   }
 
@@ -250,10 +311,13 @@ export default function SistemaTurnos() {
       <PantallaClientes
         turnoActual={turnoActual}
         turnosEsperando={turnosEsperando}
+        turnos={turnos}
+        configuracion={configuracion}
         onVolver={() => setMostrarPantalla(false)}
         onMarcarAtendido={marcarAtendido}
         onMarcarNoPresentado={marcarNoPresentado}
         onLlamarSiguiente={llamarSiguienteTurno}
+        onRegresarTurno={regresarTurno}
       />
     )
   }
@@ -266,15 +330,15 @@ export default function SistemaTurnos() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-5xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-3">
-                🧪 Laboratorio - Conexión Salud
+                🧪 Sistema de Turnos - Laboratorio
               </h1>
-              <p className="text-slate-600 text-lg">Gestión de turnos para laboratorio clínico</p>
+              <p className="text-slate-600 text-lg">Gestión profesional de turnos para laboratorio clínico</p>
             </div>
             <div className="flex gap-3">
               <Button
                 onClick={reiniciarSistema}
                 variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 bg-transparent"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reiniciar Sistema
