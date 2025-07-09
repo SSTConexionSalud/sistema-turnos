@@ -59,7 +59,7 @@ export default function SistemaTurnos() {
 
   const [configuracion, setConfiguracion] = useState<Configuracion>({
     servicios: ["Laboratorio"],
-    recepciones: 21
+    recepciones: 21,
     sonidoActivado: true,
     vozActivada: false,
     vozSeleccionada: "",
